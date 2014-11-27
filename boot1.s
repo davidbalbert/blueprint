@@ -5,6 +5,7 @@
 
 start:
     ; Enabeling Protected Mode
+
     cli                     ; Disable interrupts
 
                             ; Disable Non-Maskable Interrupts by:
@@ -23,12 +24,14 @@ start:
 
 bits 32
 start32:
-    mov     ax, 0x10        ; 0x10 is the selector of the data segment descriptor>
+    mov     ax, 0x10        ; 0x10 is the selector of the data segment descriptor.
     mov     ds, ax
     mov     ss, ax
     mov     es, ax
     mov     fs, ax
     mov     gs, ax
+
+    ; Clear the screen
 
     mov     edi, 0xB8000    ; Video memory address
     mov     ax, 0x1F20      ; A white on blue (1F) space (20)
