@@ -1,4 +1,4 @@
-# Handcrank
+# Blueprint
 
 A bootloader. Maybe an OS one day. We'll see.
 
@@ -8,10 +8,6 @@ A bootloader. Maybe an OS one day. We'll see.
 # Requires make, qemu, and nasm
 $ make run
 ```
-
-## Todo
-
-Come up with a less pretentious name.
 
 ## License
 
