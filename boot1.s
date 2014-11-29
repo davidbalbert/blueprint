@@ -15,6 +15,21 @@ start:
                             ; important (see http://wiki.osdev.org/Memory_Map_(x86)).
                             ; That's almost 30 KiB of usable space. Way more than enough.
 
+
+    call    is_a20_enabled
+    cmp     ax, 1
+    je      finish_a20_check
+
+    call    clear_screen16
+
+    push    a20_error_message
+    call    print16
+    sub     sp, 2
+
+    jmp     error
+
+finish_a20_check:
+
     ; Load the next sector from disk
     push    0x7E00             ; Destination offset
     push    0x0000             ; Destination segment
@@ -53,6 +68,78 @@ start32:
 ; Real mode helper functions
 
 bits 16
+
+; A place to go if we have an error
+error:
+    hlt
+    jmp error
+
+
+; Clears the screen. Takes no arguments
+clear_screen16:
+    push    es
+    push    di
+
+    mov     ax, 0xB800      ; Video memory 0xB800:0000.
+    mov     es, ax          ; ES:DI is used by STOSW.
+
+    mov     di, 0
+    mov     ax, 0x0720      ; A white on blue (1F) space (20)
+    mov     cx, 80 * 25     ; Set count to be number of characters on the screen
+
+    cld                     ; Direction flag = 0 (increase edi each repatition)
+
+    rep stosw               ; Copies ax to *di, ecx times.
+
+    pop     di
+    pop     es
+    ret
+
+; Prints its argument to the screen
+;
+; void print16(const char *s);
+;
+; s must be null terminated.
+print16:
+    push    bp
+    mov     bp, sp
+
+    push    si
+    push    di
+    push    es          ; segment for the string
+    push    fs          ; segment for video memory
+
+    ; TODO: We shouldn't be storing the string address in ES. ES should be
+    ; 0x0000 and SI should contain the offset address of the string. For simplicity, the video memory
+
+    mov     ax, 0               ; set up string segment
+    mov     es, ax
+
+    mov     si, [bp + 4]        ; set up string address
+
+    mov     ax, 0xB800          ; video segment
+    mov     fs, ax
+
+    mov     di, 0               ; video index
+
+print16_loop:
+    mov     al, [es:si]         ; Load the next byte of the string
+    cmp     al, 0               ; If it's 0, break out of the loop
+    je      print16_loop_end
+
+    mov     [fs:di], al
+    inc     si
+    add     di, 2               ; Move to the next byte in video memory (skipping the attribute byte)
+    jmp     print16_loop
+
+print16_loop_end:
+    pop     fs
+    pop     es
+    pop     di
+    pop     si
+
+    pop     bp
+    ret
 
 ; Disables all interrupts (including NMIs).
 ;
@@ -208,6 +295,9 @@ gdt:
     gdt_entry 0, 0xFFFFFFFF, 10010010b, 1100b   ; Data segment
     ; We need a TSS segment here, but I don't know what that is yet.
 gdt_end:
+
+a20_error_message:
+    db "Error: A20 Gate disabled. We don't support enabling it yet.", 0
 
 times 512 - 2 - ($ - $$) db 0       ; Pad the rest of the sector (512 bytes) with zeros.
 db 0x55, 0xAA                       ; magic boot numbers
