@@ -1,4 +1,4 @@
-bits    32
+bits    64
 org     0x7E00
 
     ; Clear the screen
@@ -29,6 +29,6 @@ loop_forever:
 
 
 message:
-    db "Hello, from Protected Mode!", 0
+    db "Hello, Blueprint!", 0
 
 times 512 - ($ - $$) db 0

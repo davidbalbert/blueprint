@@ -7,13 +7,19 @@ start:
     xor     ax, ax          ; Make sure the data segment and stack segment are at 0.
     mov     ds, ax
     mov     ss, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     gs, ax
+    cld
 
     mov     sp, 0x7BFE      ; Set up the stack directly below the bootloader in
     mov     bp, sp          ; memory. We can't set it to 0x7BFF, because the stack
-                            ; has to be 16-bit (2 byte) alligned. The stack can grow
-                            ; from 0x7BFE to 0x500 without overwriting anything
-                            ; important (see http://wiki.osdev.org/Memory_Map_(x86)).
-                            ; That's almost 30 KiB of usable space. Way more than enough.
+                            ; has to be 16-bit (2 byte) alligned. We're storing our
+                            ; paging structures at 0x1000, 0x2000, 0x3000, and 0x4000,
+                            ; so the stack can grow from 0x7BFE to 0x5000 without
+                            ; overwriting anything important (see
+                            ; http://wiki.osdev.org/Memory_Map_(x86)). That's more than
+                            ; 11 KiB of usable space, which should be plenty.
 
 
     call    is_a20_enabled
@@ -40,21 +46,64 @@ finish_a20_check:
 
     sub sp, 8
 
-    ; Enabeling Protected Mode
+    ; Enabeling Long Mode
 
     call    disable_interrupts
 
-    lgdt    [gdt_header]    ; Load the GDT
+    ; Set up long mode page tables. We're going to identity map the first two
+    ; megabytes of memory.
 
-    mov     eax, cr0        ; Set the Protected Mode Enable (PE) bit in CR0
-    or      al, 1
+    mov     edi, 0x1000
+    mov     cr3, edi        ; Store the address of the PML4T in CR3.
+
+    ; Clear 0x1000 - 0x4FFF
+    xor     eax, eax
+    mov     ecx, 4096
+    rep stosd               ; Writes 4096 (ECX) 32-bit length 0's (EAX) starting at 0x1000 (edi)
+
+    ; Map the page tables
+    mov     edi, cr3
+    mov     DWORD [edi], 0x2003 ; Point PML4T[0] to a PDPT at 0x2000, marked as read/write and present(bit 2, and 1).
+    add     edi, 0x1000
+    mov     DWORD [edi], 0x3003 ; Point PDPT[0] to a PDT at 0x3000, marked as read/write and present
+    add     edi, 0x1000
+    mov     DWORD [edi], 0x4003 ; Point PDT[0] to a PT at 0x4000, marked as read/write and present
+    add     edi, 0x1000
+
+    ; Identity map all 512 entries in PML4T[0]->PDPT[0]->PDT[0]->PT. This is 2 MiB.
+    mov     ebx, 0x3        ; r/w and present
+    mov     ecx, 512
+
+map_entry:
+    mov     DWORD [edi], ebx    ; Map in the address of the current page (with r/w and present)
+    add     ebx, 0x1000         ; Calculate the address of the next page
+    add     edi, 8              ; Move to the next Page Table Entry in memory
+    loop    map_entry           ; Jumps to map_entry and decrements ECX unless ECX == 1
+
+    ; Enable PAE
+    mov     eax, cr4
+    or      eax, 1 << 5
+    mov     cr4, eax
+
+    ; Enable Long Mode in the EFER Machine Specific Register
+    mov     ecx, 0xC0000080     ; The address of the EFER MSR
+    rdmsr                       ; Stores the 64-bit value of EFER into EDX:EAX
+    or      eax, 1 << 8         ; Set the LM bit
+    wrmsr
+
+    ; Enable paging (31) and protected mode (0)
+    mov     eax, cr0
+    or      eax, 1 << 31 | 1 << 0
     mov     cr0, eax
 
-    jmp     0x8:start32     ; Far jump into Protected Mode! 0x8 is the selector of the
+
+    lgdt    [gdt_header]    ; Load the GDT
+
+    jmp     0x8:start64     ; Far jump into long mode! 0x8 is the selector of the
                             ; code segment descriptor. This sets CS.
 
-bits 32
-start32:
+bits 64
+start64:
     mov     ax, 0x10        ; 0x10 is the selector of the data segment descriptor.
     mov     ds, ax
     mov     ss, ax
@@ -62,7 +111,7 @@ start32:
     mov     fs, ax
     mov     gs, ax
 
-    jmp     0x8:0x7E00
+    jmp     0x7E00
 
 
 ; Real mode helper functions
@@ -86,8 +135,6 @@ clear_screen16:
     mov     di, 0
     mov     ax, 0x0720      ; A white on blue (1F) space (20)
     mov     cx, 80 * 25     ; Set count to be number of characters on the screen
-
-    cld                     ; Direction flag = 0 (increase edi each repatition)
 
     rep stosw               ; Copies ax to *di, ecx times.
 
@@ -289,15 +336,19 @@ gdt_header:
     dw gdt_end - gdt - 1
     dd gdt
 
+; The GDT should be alligned on an 8-byte boundary. See section 3.5.1, of
+; volume 3A of the Intel 64 and IA-32 Architectures Software Developer's
+; Manual.
+align 8
 gdt:
     gdt_entry 0, 0, 0, 0                        ; Null descriptor
-    gdt_entry 0, 0xFFFFFFFF, 10011010b, 1100b   ; Code segment
-    gdt_entry 0, 0xFFFFFFFF, 10010010b, 1100b   ; Data segment
+    gdt_entry 0, 0, 10011010b, 1010b            ; Code segment
+    gdt_entry 0, 0, 10010010b, 0                ; Data segment
     ; We need a TSS segment here, but I don't know what that is yet.
 gdt_end:
 
 a20_error_message:
-    db "Error: A20 Gate disabled. We don't support enabling it yet.", 0
+    db "Error", 0 ;: A20 Gate disabled. We don't support enabling it yet.", 0
 
 times 512 - 2 - ($ - $$) db 0       ; Pad the rest of the sector (512 bytes) with zeros.
 db 0x55, 0xAA                       ; magic boot numbers
