@@ -3,13 +3,11 @@ org     0x7E00
 
     ; Clear the screen
 
-    mov     edi, 0xB8000    ; Video memory address
-    mov     ax, 0x1F20      ; A white on blue (1F) space (20)
-    mov     ecx, 80 * 25    ; Set count to be number of characters on the screen
+    mov     edi, 0xB8000                ; Video memory address
+    mov     rax, 0x1F201F201F201F20     ; 4 white on blue (1F) spaces (20)
+    mov     ecx, 80 * 25 / 4            ; Set count to be number of 4 char chunks on the screen
 
-    cld                     ; Direction flag = 0 (increase edi each repatition)
-
-    rep stosw               ; Copies ax to *edi, ecx times.
+    rep stosq               ; Copies rax to *edi, ecx times.
 
     mov     edi, 0xB8000
     mov     edx, message
