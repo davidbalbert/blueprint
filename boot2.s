@@ -1,6 +1,4 @@
-bits    64
-org     0x7E00
-
+section .text
     ; Clear the screen
 
     mov     edi, 0xB8000                ; Video memory address
@@ -24,9 +22,7 @@ loop_forever:
     hlt
     jmp     loop_forever
 
-
+section .data
 
 message:
     db "Hello, Blueprint!", 0
-
-times 512 - ($ - $$) db 0

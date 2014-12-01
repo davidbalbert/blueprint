@@ -8,11 +8,11 @@ endif
 
 
 ifeq ($(PLATFORM), darwin)
-	BOOT2_DEPENDS := boot2.s tools/bin/x86_64-linux-gnu-ld
+	CUSTOM_LD := tools/bin/x86_64-linux-gnu-ld
 	LD := tools/bin/x86_64-linux-gnu-ld
 endif
 ifeq ($(PLATFORM), linux)
-	BOOT2_DEPENDS := boot2.s
+	CUSTOM_LD := ""
 	LD := ld
 endif
 
@@ -22,13 +22,17 @@ hd.img: boot1.bin boot2.bin
 boot1.bin: boot1.s
 	nasm -f bin -o boot1.bin boot1.s
 
-boot2.bin: $(BOOT2_DEPENDS)
-	nasm -f bin -o boot2.bin boot2.s
+boot2.bin: boot2.o linker.ld $(CUSTOM_LD)
+	$(LD) -T linker.ld
+
+boot2.o: boot2.s
+	nasm -f elf64 boot2.s
+
+
 
 # Custom binutils for OS X
 tools/bin/x86_64-linux-gnu-ld:
 	sh scripts/fetch_binutils.sh
-
 
 .PHONY: run
 run: hd.img
@@ -37,4 +41,4 @@ run: hd.img
 .PHONY: clean
 
 clean:
-	rm -f *.bin hd.img
+	rm -f *.o *.bin hd.img
