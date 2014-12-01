@@ -16,13 +16,13 @@ ifeq ($(PLATFORM), linux)
 	LD := ld
 endif
 
-hd.img: boot1.bin boot2.bin
-	cat boot1.bin boot2.bin > hd.img
+hd.img: boot1.bin kernel.bin
+	cat boot1.bin kernel.bin > hd.img
 
 boot1.bin: boot1.s
 	nasm -f bin -o boot1.bin boot1.s
 
-boot2.bin: boot2.o linker.ld $(CUSTOM_LD)
+kernel.bin: boot2.o linker.ld $(CUSTOM_LD)
 	$(LD) -T linker.ld
 
 boot2.o: boot2.s
