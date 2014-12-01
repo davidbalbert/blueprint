@@ -26,25 +26,19 @@ start:
     cmp     ax, 1
     je      finish_a20_check
 
-    call    clear_screen16
-
     push    a20_error_message
-    call    print16
-    sub     sp, 2
-
-    jmp     error
+    jmp     panic
 
 finish_a20_check:
 
-    ; Load the next sector from disk
-    push    0x7E00             ; Destination offset
-    push    0x0000             ; Destination segment
-    push    1                  ; Number of sectors
-    push    1                  ; LBA
+    ; Load stage 2 from disk. Look for "dap:" to see the parameters.
+    ; See: http://wiki.osdev.org/ATA_in_x86_RealMode_%28BIOS%29#LBA_in_Extended_Mode
+    xor     ax, ax
+    mov     ah, 0x42                    ; Some sort of subroutine identifier for disk reads, maybe?
+    mov     dl, 0x80                    ; "C" drive
+    mov     si, dap                     ; Save the address of the DAP
 
-    call    load_from_disk
-
-    sub sp, 8
+    int     0x13                        ; Call the BIOS
 
     ; Enabeling Long Mode
 
@@ -118,17 +112,10 @@ start64:
 
 bits 16
 
-; A place to go if we have an error
-error:
-    hlt
-    jmp error
-
-
-; Clears the screen. Takes no arguments
-clear_screen16:
-    push    es
-    push    di
-
+; Prints the null terminated string pointed to on the top of the stack and
+; halts.
+panic:
+    ; Clear the screen
     mov     ax, 0xB800      ; Video memory 0xB800:0000.
     mov     es, ax          ; ES:DI is used by STOSW.
 
@@ -138,55 +125,30 @@ clear_screen16:
 
     rep stosw               ; Copies ax to *di, ecx times.
 
-    pop     di
-    pop     es
-    ret
-
-; Prints its argument to the screen
-;
-; void print16(const char *s);
-;
-; s must be null terminated.
-print16:
-    push    bp
-    mov     bp, sp
-
-    push    si
-    push    di
-    push    es          ; segment for the string
-    push    fs          ; segment for video memory
-
-    ; TODO: We shouldn't be storing the string address in ES. ES should be
-    ; 0x0000 and SI should contain the offset address of the string. For simplicity, the video memory
-
-    mov     ax, 0               ; set up string segment
+    ; Print the message
+    mov     ax, 0           ; The segment of the error message
     mov     es, ax
 
-    mov     si, [bp + 4]        ; set up string address
+    pop     si              ; Address of the error message
 
-    mov     ax, 0xB800          ; video segment
+    mov     ax, 0xB800      ; video segment
     mov     fs, ax
 
-    mov     di, 0               ; video index
+    mov     di, 0           ; video index
 
-print16_loop:
+error_loop:
     mov     al, [es:si]         ; Load the next byte of the string
     cmp     al, 0               ; If it's 0, break out of the loop
-    je      print16_loop_end
+    je      error_halt
 
     mov     [fs:di], al
     inc     si
     add     di, 2               ; Move to the next byte in video memory (skipping the attribute byte)
-    jmp     print16_loop
+    jmp     error_loop
 
-print16_loop_end:
-    pop     fs
-    pop     es
-    pop     di
-    pop     si
-
-    pop     bp
-    ret
+error_halt:
+    hlt
+    jmp     error_halt
 
 ; Disables all interrupts (including NMIs).
 ;
@@ -251,68 +213,19 @@ is_a20_enabled_cleanup:
 
     ret
 
-
-; Loads blocks from the primary disk into memory.
-; See: http://wiki.osdev.org/ATA_in_x86_RealMode_%28BIOS%29#LBA_in_Extended_Mode
-;
-; void load_from_disk(short starting_lba,
-;                     short sector_count,
-;                     short destination_segment,
-;                     short destination_offset)
-;
-;
-
-load_from_disk:
-    push    bp
-    mov     bp, sp
-
-    push    bx
-
-    ; Clear out LBA field
-    mov     DWORD [dap.lba], 0
-    mov     DWORD [dap.lba + 4], 0
-
-    mov     ax, [bp + 4]
-    mov     [dap.lba], ax
-
-    mov     ax, [bp + 6]
-    mov     [dap.sector_count], ax
-
-    mov     ax, [bp + 8]
-    mov     [dap.segment], ax
-
-    mov     ax, [bp + 10]
-    mov     [dap.offset], ax
-
-    push    si
-
-    xor     ax, ax
-    mov     ah, 0x42                    ; Some sort of subroutine identifier for disk reads, maybe?
-    mov     dl, 0x80                    ; "C" drive
-    mov     si, dap                     ; Save the address of the DAP
-
-    int     0x13                        ; Call the BIOS
-
-    pop si
-    pop bx
-
-    mov sp, bp
-    pop bp
-    ret
-
 ; Disk address packet
 align 2
 dap:
     db  16              ; Packet size
     db  0               ; Always zero
 .sector_count:
-    dw  0               ; Number of sectors
+    dw  1               ; Number of sectors
 .offset:
-    dw  0               ; Destination offset
+    dw  0x7E00          ; Destination offset
 .segment:
     dw  0               ; Destination segment
 .lba:
-    dd  0               ; Starting LBA
+    dd  1               ; Starting LBA
     dd  0               ; Upper 16 bits of 48-bit LBA
 
 ; Expands to an entry for the gdt table.
@@ -348,7 +261,7 @@ gdt:
 gdt_end:
 
 a20_error_message:
-    db "Error", 0 ;: A20 Gate disabled. We don't support enabling it yet.", 0
+    db "Error: A20 Gate disabled. We don't support enabling it yet.", 0
 
 times 512 - 2 - ($ - $$) db 0       ; Pad the rest of the sector (512 bytes) with zeros.
 db 0x55, 0xAA                       ; magic boot numbers
