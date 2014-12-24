@@ -263,5 +263,36 @@ gdt_end:
 a20_error_message:
     db "Error: A20 Gate disabled. We don't support enabling it yet.", 0
 
-times 512 - 2 - ($ - $$) db 0       ; Pad the rest of the sector (512 bytes) with zeros.
+times 512 - 76 - ($ - $$) db 0      ; Pad the rest of the sector (512 bytes) with zeros.
+                                    ; 76 is the size of the partition table, and the magic
+                                    ; boot numbers.
+
+; Expands to an entry for the Partition Table
+; See: http://wiki.osdev.org/Partition_Table
+;
+; %1 - Starting LBA value,  32 bits
+; %2 - Number of sectors,   32 bits
+%macro partition_table_entry 2
+    db 0                            ; Boot flag (not bootable).
+    db 0                            ; Starting head
+    dw 0                            ; Starting sector and cylinder
+    db 0                            ; System ID
+    db 0                            ; Ending head
+    dw 0                            ; Ending sector and cylinder
+    dd %1                           ; Starting block
+    dd %2                           ; Partition size
+%endmacro
+
+%macro empty_partition_table_entry 0
+    times 16 db 0
+%endmacro
+
+; Partition Table
+
+times 10 db 0                       ; Optional "unique" disk ID
+empty_partition_table_entry         ; The Partition Table always has 4 entries
+empty_partition_table_entry
+empty_partition_table_entry
+empty_partition_table_entry
+
 db 0x55, 0xAA                       ; magic boot numbers

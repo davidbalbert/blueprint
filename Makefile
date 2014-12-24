@@ -19,20 +19,42 @@ ifeq ($(PLATFORM), linux)
 	LD := ld
 endif
 
-hd.img: boot1.bin kernel.bin
-	cat boot1.bin kernel.bin > hd.img
+# This creates, partitions and formats a 50 MB hard drive. I arrived at the
+# arguments to the second call to mpartition by some amount of black magic: I
+# want to fill the entire HD with one partition. Mpartition complains if you
+# don't have your partition aligned correctly, but doesn't tell you what
+# "alligned correctly" means. I came up with this number by using fdisk to
+# create a partition, and then using mpartition -p to get the proper flags to
+# create the partition. This yielded a partition of a different size than what
+# fdisk created, but it's close enough and mpartition doesn't error out when
+# using these flags.
+#
+# In mformat, I have to specify a cluster size of one sector
+hd.img: boot1.bin stage2.bin mtoolsrc hello.txt
+	dd bs=512 count=102400 if=/dev/zero of=hd.img
+	MTOOLSRC=./mtoolsrc mpartition -I -B boot1.bin c:
+	MTOOLSRC=./mtoolsrc mpartition -c -t 6 -h 255 -s 63 -b 63 c:
+	MTOOLSRC=./mtoolsrc mformat -F -c 1 c:
+	dd bs=512 seek=1 if=stage2.bin of=hd.img conv=notrunc
+	MTOOLSRC=./mtoolsrc mcopy hello.txt c:/hello.txt
+
+mtoolsrc:
+	echo 'drive c: file="./hd.img" partition=1' > mtoolsrc
+
+hello.txt:
+	echo 'Hello, world!' > hello.txt
 
 boot1.bin: boot1.s
 	nasm -f bin -o boot1.bin boot1.s
 
-kernel.bin: boot2.o kernel.o linker.ld $(CUSTOM_LD)
-	$(LD) -T linker.ld -o kernel.bin boot2.o kernel.o
+stage2.bin: boot2.o main.o linker.ld $(CUSTOM_LD)
+	$(LD) -T linker.ld -o stage2.bin boot2.o main.o
 
 boot2.o: boot2.s
 	nasm -f elf64 boot2.s
 
-kernel.o: kernel.rs libcore.rlib
-	rustc kernel.rs -O --emit obj --extern core=./libcore.rlib --target=${RUSTC_TARGET}
+main.o: main.rs libcore.rlib
+	rustc main.rs -O --emit obj --extern core=./libcore.rlib --target=${RUSTC_TARGET}
 
 libcore.rlib:
 	rustc ${RUST_SRC}/src/libcore/lib.rs --target ${RUSTC_TARGET}
@@ -48,4 +70,4 @@ run: hd.img
 .PHONY: clean
 
 clean:
-	rm -f *.o *.bin *.rlib hd.img
+	rm -f *.o *.bin *.rlib mtoolsrc hd.img hello.txt

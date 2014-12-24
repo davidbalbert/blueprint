@@ -3,3 +3,5 @@
 *.img
 *.rlib
 tools
+mtoolsrc
+hello.txt
