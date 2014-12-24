@@ -19,17 +19,18 @@ ifeq ($(PLATFORM), linux)
 	LD := ld
 endif
 
-# This creates, partitions and formats a 50 MB hard drive. I arrived at the
-# arguments to the second call to mpartition by some amount of black magic: I
-# want to fill the entire HD with one partition. Mpartition complains if you
-# don't have your partition aligned correctly, but doesn't tell you what
-# "alligned correctly" means. I came up with this number by using fdisk to
-# create a partition, and then using mpartition -p to get the proper flags to
-# create the partition. This yielded a partition of a different size than what
-# fdisk created, but it's close enough and mpartition doesn't error out when
-# using these flags.
+# This creates, partitions and formats a 50 MB hard drive with one FAT32
+# partition. I arrived at the arguments to the second call to mpartition by
+# some amount of black magic: I want to fill the entire HD with one partition.
+# Mpartition complains if you don't have your partition aligned correctly, but
+# doesn't tell you what "alligned correctly" means. I came up with this number
+# by using fdisk to create a partition, and then using mpartition -p to get the
+# proper flags to create the partition. This yielded a partition of a different
+# size than what fdisk created, but it's close enough and mpartition doesn't
+# error out when using these flags.
 #
-# In mformat, I have to specify a cluster size of one sector
+# In mformat, I have to specify a cluster size of 1 sector or it will complain
+# that there aren't enough clusters for FAT32.
 hd.img: boot1.bin stage2.bin mtoolsrc hello.txt
 	dd bs=512 count=102400 if=/dev/zero of=hd.img
 	MTOOLSRC=./mtoolsrc mpartition -I -B boot1.bin c:
