@@ -267,22 +267,6 @@ times 512 - 76 - ($ - $$) db 0      ; Pad the rest of the sector (512 bytes) wit
                                     ; 76 is the size of the partition table, and the magic
                                     ; boot numbers.
 
-; Expands to an entry for the Partition Table
-; See: http://wiki.osdev.org/Partition_Table
-;
-; %1 - Starting LBA value,  32 bits
-; %2 - Number of sectors,   32 bits
-%macro partition_table_entry 2
-    db 0                            ; Boot flag (not bootable).
-    db 0                            ; Starting head
-    dw 0                            ; Starting sector and cylinder
-    db 0                            ; System ID
-    db 0                            ; Ending head
-    dw 0                            ; Ending sector and cylinder
-    dd %1                           ; Starting block
-    dd %2                           ; Partition size
-%endmacro
-
 %macro empty_partition_table_entry 0
     times 16 db 0
 %endmacro
