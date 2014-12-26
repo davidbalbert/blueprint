@@ -50,7 +50,9 @@ boot1.bin: boot1.s
 
 stage2.bin: boot2.o main.o linker.ld $(CUSTOM_LD)
 	$(LD) -T linker.ld -o stage2.bin boot2.o main.o
-	echo "STAGE2 Size: " `stat -f%z stage2.bin`
+	@echo
+	@echo "STAGE2 Size: " `stat -f%z stage2.bin`
+	@echo
 
 boot2.o: boot2.s
 	nasm -f elf64 boot2.s
