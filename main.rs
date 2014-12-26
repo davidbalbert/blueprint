@@ -2,10 +2,14 @@
 #![no_std]
 #![feature(lang_items)]
 #![feature(globs)]
+#![feature(asm)]
 
 extern crate core;
 
 use core::prelude::*;
+
+mod io;
+mod ata;
 
 const VIDEO_MEMORY: int = 0xB8000;
 
@@ -32,6 +36,7 @@ fn print(message: &str) {
 pub fn kernel_main() {
     clear_screen();
     print("Hello, Blueprint!");
+    ata::read(0, 2, 0x10000);
 
     loop {}
 }
