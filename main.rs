@@ -33,7 +33,7 @@ fn print(message: &str) {
 }
 
 #[no_mangle]
-pub fn kernel_main() {
+pub fn stage2_main() {
     clear_screen();
     print("Hello, Blueprint!");
     ata::read(0, 2, 0x10000);
