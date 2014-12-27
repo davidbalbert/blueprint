@@ -45,8 +45,11 @@ mtoolsrc:
 hello.txt:
 	echo 'Hello, world!' > hello.txt
 
-boot1.bin: boot1.s
+boot1.bin: boot1.s stage2size.inc
 	nasm -f bin -o boot1.bin boot1.s
+
+stage2size.inc: stage2.bin
+	echo "%define stage2size $(shell echo $(shell wc -c stage2.bin | sed 's/^ *//' | cut -f 1 -d ' ') / 512 | bc)" > stage2size.inc
 
 stage2.bin: boot2.o main.o linker.ld $(CUSTOM_LD)
 	$(LD) -T linker.ld -o stage2.bin boot2.o main.o

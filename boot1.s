@@ -213,13 +213,16 @@ is_a20_enabled_cleanup:
 
     ret
 
+
+%include "stage2size.inc"
+
 ; Disk address packet
 align 2
 dap:
     db  16              ; Packet size
     db  0               ; Always zero
 .sector_count:
-    dw  1               ; Number of sectors
+    dw  stage2size      ; Number of sectors
 .offset:
     dw  0x7E00          ; Destination offset
 .segment:
