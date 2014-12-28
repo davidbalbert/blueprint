@@ -14,8 +14,6 @@ mod ata;
 mod fat;
 mod vga;
 
-const VIDEO_MEMORY: int = 0xB8000;
-
 #[no_mangle]
 pub fn stage2_main() {
     vga::clear_screen();
@@ -23,7 +21,7 @@ pub fn stage2_main() {
 
     ata::read(0, 2, 0x10000);
 
-    let size = fat::file_size("/hello.txt");
+    //let size = fat::file_size("/hello.txt");
     fat::read_file("/hello.txt", 0x10000);
 
     //vga::print_memory(0x10000, size);
