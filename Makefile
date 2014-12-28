@@ -1,5 +1,5 @@
 RUST_SRC := /Users/david/Development/rust
-RUSTC_TARGET := x86_64-unknown-linux-gnu
+RUSTC_TARGET := x86_64-unknown-blueprint.json
 
 UNAME := $(shell uname)
 ifeq ($(UNAME),Darwin)
@@ -61,10 +61,10 @@ boot2.o: boot2.s
 	nasm -f elf64 boot2.s
 
 main.o: main.rs ata.rs io.rs libcore.rlib
-	rustc main.rs -O --emit obj --extern core=./libcore.rlib --target=${RUSTC_TARGET}
+	rustc main.rs --emit obj --extern core=./libcore.rlib --target=${RUSTC_TARGET}
 
 libcore.rlib:
-	rustc ${RUST_SRC}/src/libcore/lib.rs --target ${RUSTC_TARGET}
+	rustc ${RUST_SRC}/src/libcore/lib.rs --target=${RUSTC_TARGET}
 
 # Custom binutils for OS X
 tools/bin/x86_64-linux-gnu-ld:
