@@ -60,7 +60,7 @@ stage2.bin: boot2.o main.o linker.ld $(CUSTOM_LD)
 boot2.o: boot2.s
 	nasm -f elf64 boot2.s
 
-main.o: main.rs ata.rs io.rs libcore.rlib
+main.o: main.rs util.rs vga.rs fat.rs ata.rs io.rs libcore.rlib
 	rustc main.rs --emit obj --extern core=./libcore.rlib --target=${RUSTC_TARGET}
 
 libcore.rlib:

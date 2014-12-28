@@ -8,39 +8,28 @@ extern crate core;
 
 use core::prelude::*;
 
+mod util;
 mod io;
 mod ata;
+mod fat;
+mod vga;
 
 const VIDEO_MEMORY: int = 0xB8000;
 
-fn clear_screen() {
-    for x in range(0i, 80 * 25) {
-        unsafe {
-            *((VIDEO_MEMORY + x * 2) as *mut u16) = 0x1F20;
-        }
-    }
-}
-
-fn print(message: &str) {
-    let mut i = 0i;
-
-    for x in message.chars() {
-        unsafe {
-            *((VIDEO_MEMORY + i) as *mut u8) = x as u8;
-        }
-        i += 2;
-    }
-}
-
 #[no_mangle]
 pub fn stage2_main() {
-    clear_screen();
-    print("Hello, Blueprint!");
+    vga::clear_screen();
+    vga::print("Hello, Blueprint!");
+
     ata::read(0, 2, 0x10000);
 
-    loop {}
-}
+    let size = fat::file_size("/hello.txt");
+    fat::read_file("/hello.txt", 0x10000);
 
+    //vga::print_memory(0x10000, size);
+
+    util::halt();
+}
 
 // These functions and traits are used by the compiler, but not
 // for a bare-bones hello world. These are normally
