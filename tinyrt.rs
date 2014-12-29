@@ -17,8 +17,8 @@ pub mod option {
 }
 
 pub mod iter {
-    use runtime::option::Option;
-    use runtime::option::Option::{Some, None};
+    use tinyrt::option::Option;
+    use tinyrt::option::Option::{Some, None};
 
     #[lang="iterator"]
     pub trait Iterator<A> {
@@ -66,7 +66,7 @@ pub mod ptr {
 }
 
 pub mod mem {
-    use runtime::ptr;
+    use tinyrt::ptr;
 
     extern "rust-intrinsic" {
         pub fn transmute<T, U>(e: T) -> U;
@@ -79,8 +79,8 @@ pub mod mem {
 }
 
 pub mod raw {
-    use runtime::kinds::{Sized, Copy};
-    use runtime::mem;
+    use tinyrt::kinds::{Sized, Copy};
+    use tinyrt::mem;
 
     #[repr(C)]
     pub struct Slice<T> {
@@ -105,11 +105,11 @@ pub mod intrinsics {
 }
 
 pub mod ops {
-    use runtime::mem;
-    use runtime::intrinsics;
-    use runtime::slice::SliceExt;
-    use runtime::raw::Repr;
-    use runtime::kinds::Sized;
+    use tinyrt::mem;
+    use tinyrt::intrinsics;
+    use tinyrt::slice::SliceExt;
+    use tinyrt::raw::Repr;
+    use tinyrt::kinds::Sized;
 
     use util;
 
@@ -133,9 +133,9 @@ pub mod ops {
 }
 
 pub mod str {
-    use runtime::kinds::Sized;
-    use runtime::raw::Repr;
-    use runtime::mem;
+    use tinyrt::kinds::Sized;
+    use tinyrt::raw::Repr;
+    use tinyrt::mem;
 
     pub trait StrExt for Sized? {
         fn len(&self) -> uint;
@@ -154,14 +154,14 @@ pub mod str {
 }
 
 pub mod slice {
-    use runtime::iter;
-    use runtime::raw;
-    use runtime::intrinsics;
-    use runtime::mem;
-    use runtime::option::Option;
-    use runtime::option::Option::{Some, None};
-    use runtime::kinds::Sized;
-    use runtime::raw::Repr;
+    use tinyrt::iter;
+    use tinyrt::raw;
+    use tinyrt::intrinsics;
+    use tinyrt::mem;
+    use tinyrt::option::Option;
+    use tinyrt::option::Option::{Some, None};
+    use tinyrt::kinds::Sized;
+    use tinyrt::raw::Repr;
 
     struct Iter<T> {
         ptr: *const T,
@@ -177,7 +177,7 @@ pub mod slice {
                 unsafe {
                     let res = self.ptr;
                     self.ptr = intrinsics::offset(self.ptr, 1);
-                    Some(*res)
+                    Some(mem::transmute(res))
                 }
             }
         }
@@ -207,12 +207,12 @@ pub mod slice {
 }
 
 pub mod prelude {
-    pub use runtime::kinds::{Sized, Copy};
-    pub use runtime::iter::range;
-    pub use runtime::option::Option;
-    pub use runtime::option::Option::{Some, None};
-    pub use runtime::slice::SliceExt;
-    pub use runtime::str::StrExt;
+    pub use tinyrt::kinds::{Sized, Copy};
+    pub use tinyrt::iter::range;
+    pub use tinyrt::option::Option;
+    pub use tinyrt::option::Option::{Some, None};
+    pub use tinyrt::slice::SliceExt;
+    pub use tinyrt::str::StrExt;
 }
 
 

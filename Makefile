@@ -60,7 +60,7 @@ stage2.bin: boot2.o main.o linker.ld $(CUSTOM_LD)
 boot2.o: boot2.s
 	nasm -f elf64 boot2.s
 
-main.o: main.rs util.rs vga.rs fat.rs ata.rs io.rs runtime.rs
+main.o: main.rs util.rs vga.rs fat.rs ata.rs io.rs tinyrt.rs
 	rustc main.rs --emit obj --target=${RUSTC_TARGET}
 
 # Un-necessary for the bootloader, but we'll leave it here for the

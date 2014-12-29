@@ -1,4 +1,4 @@
-use runtime::prelude::*;
+use tinyrt::prelude::*;
 
 const VIDEO_MEMORY: int = 0xB8000;
 

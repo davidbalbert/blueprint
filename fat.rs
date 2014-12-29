@@ -1,6 +1,6 @@
 // Functions for reading data off a FAT32 formatted active primary partition.
 
-use runtime::prelude::*;
+use tinyrt::prelude::*;
 
 use util;
 use ata;

@@ -6,7 +6,7 @@
 #![feature(intrinsics)]
 
 /* libcore is way too big for a bootloader. We'll have to write our own. */
-mod runtime;
+mod tinyrt;
 
 mod util;
 mod io;
