@@ -3,10 +3,10 @@
 #![feature(lang_items)]
 #![feature(globs)]
 #![feature(asm)]
+#![feature(intrinsics)]
 
-extern crate core;
-
-use core::prelude::*;
+/* libcore is way too big for a bootloader. We'll have to write our own. */
+mod runtime;
 
 mod util;
 mod io;
@@ -28,10 +28,3 @@ pub fn stage2_main() {
 
     util::halt();
 }
-
-// These functions and traits are used by the compiler, but not
-// for a bare-bones hello world. These are normally
-// provided by libstd.
-#[lang = "stack_exhausted"] extern fn stack_exhausted() {}
-#[lang = "eh_personality"] extern fn eh_personality() {}
-#[lang = "panic_fmt"] fn panic_fmt() -> ! { loop {} }

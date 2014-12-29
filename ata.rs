@@ -2,7 +2,8 @@
 // of the primary (master) disc on the primary ATA bus.
 // See: http://wiki.osdev.org/ATA_PIO_Mode
 
-use core::iter;
+use runtime::prelude::*;
+use runtime::iter;
 
 use io;
 

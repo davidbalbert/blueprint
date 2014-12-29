@@ -60,9 +60,11 @@ stage2.bin: boot2.o main.o linker.ld $(CUSTOM_LD)
 boot2.o: boot2.s
 	nasm -f elf64 boot2.s
 
-main.o: main.rs util.rs vga.rs fat.rs ata.rs io.rs libcore.rlib
-	rustc main.rs --emit obj --extern core=./libcore.rlib --target=${RUSTC_TARGET}
+main.o: main.rs util.rs vga.rs fat.rs ata.rs io.rs runtime.rs
+	rustc main.rs --emit obj --target=${RUSTC_TARGET}
 
+# Un-necessary for the bootloader, but we'll leave it here for the
+# kernel, later.
 libcore.rlib:
 	rustc ${RUST_SRC}/src/libcore/lib.rs --target=${RUSTC_TARGET}
 

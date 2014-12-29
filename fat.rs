@@ -1,6 +1,6 @@
 // Functions for reading data off a FAT32 formatted active primary partition.
 
-use core::prelude::*;
+use runtime::prelude::*;
 
 use util;
 use ata;
@@ -33,14 +33,13 @@ fn get_partition_table() -> &'static [Partition, ..4] {
 }
 
 fn active_partition(table: &[Partition, ..4]) -> &Partition {
-    let opt = table.iter().find(|e| !e.is_unused() && e.is_active());
-
-    match opt {
-        Some(p) => p,
-        None => {
-            util::die("No active partition");
-        },
+    for p in table.iter() {
+        if !p.is_unused() && p.is_active() {
+            return &p;
+        }
     }
+
+    util::die("No active partition");
 }
 
 pub fn file_size(path: &str) -> uint {
