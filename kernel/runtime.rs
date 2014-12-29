@@ -1,3 +1,6 @@
+/*
+ *
+ * This isn't used by anything. Commented out to prove the point.
 use util;
 
 #[no_mangle]
@@ -134,3 +137,4 @@ pub fn fmod() {
 pub fn memcmp() {
     util::die("No `memcmp'");
 }
+*/
