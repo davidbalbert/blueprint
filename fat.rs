@@ -35,7 +35,7 @@ fn get_partition_table() -> &'static [Partition, ..4] {
 fn active_partition(table: &[Partition, ..4]) -> &Partition {
     for p in table.iter() {
         if !p.is_unused() && p.is_active() {
-            return &p;
+            return p;
         }
     }
 

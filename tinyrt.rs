@@ -163,21 +163,21 @@ pub mod slice {
     use tinyrt::kinds::Sized;
     use tinyrt::raw::Repr;
 
-    struct Iter<T> {
+    struct Iter<'a, T: 'a> {
         ptr: *const T,
         end: *const T,
     }
 
     // Doesn't handle zero sized T.
-    impl<T> iter::Iterator<T> for Iter<T> {
-        fn next(&mut self) -> Option<T> {
+    impl<'a, T> iter::Iterator<&'a T> for Iter<'a, T> {
+        fn next(&mut self) -> Option<&'a T> {
             if self.ptr == self.end {
                 None
             } else {
                 unsafe {
                     let res = self.ptr;
                     self.ptr = intrinsics::offset(self.ptr, 1);
-                    Some(mem::transmute(res))
+                    Some(&*res)
                 }
             }
         }

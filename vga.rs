@@ -15,7 +15,7 @@ pub fn print(message: &str) {
 
     for b in message.as_bytes().iter() {
         unsafe {
-            *((VIDEO_MEMORY + i) as *mut u8) = b
+            *((VIDEO_MEMORY + i) as *mut u8) = *b
         }
     }
 }
