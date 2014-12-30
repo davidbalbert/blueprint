@@ -1,10 +1,59 @@
 // Functions for reading data off a FAT32 formatted active primary partition.
 
-use tinyrt::prelude::*;
+use core::prelude::*;
 
 use util;
 use ata;
 
+#[repr(C, packed)]
+struct BootRecord {
+    bpb: BiosParameterBlock,
+    ebr: ExtendedBootRecord,
+}
+
+#[repr(C, packed)]
+struct BiosParameterBlock {
+    jump: [u8, ..3],            // Machine code for jumping over the following data
+    oem_id: [u8, ..8],
+    bytes_per_sector: u16,
+    sectors_per_cluster: u8,
+    reserved_sectors: u16,
+    fats: u8,
+    dir_entries: u16,
+    sectors: u16,
+    media_descriptor_type: u8,
+    fat16_sectors_per_fat: u16,
+    sectors_per_track: u16,
+    heads: u16,
+    lba_start: u32,
+    large_sectors: u32,
+}
+
+#[repr(C, packed)]
+struct ExtendedBootRecord {
+    sectors_per_fat: u32,
+    flags: u16,
+    version_major: u8,
+    version_minor: u8,
+    root_cluster: u32,
+    fsinfo_sector: u16,
+    backup_boot_sector: u16,
+    reserved: [u8, ..12],
+    drive_number: u8,
+    winnt_flags: u8,
+    signature: u8,
+    serial_number: u32,
+    label: [u8, ..11],
+    system_id: [u8, ..8],
+    boot_code: [u8, ..420],
+    boot_signature: u16,
+}
+
+#[repr(C, packed)]
+struct FileAllocationTable {
+}
+
+#[repr(C)]
 struct Partition {
     active: u8,
     start_head: u8,
@@ -23,6 +72,12 @@ impl Partition {
 
     fn is_active(&self) -> bool {
         self.active == 0x80
+    }
+
+    fn read_file(&self, path: &str, destination: uint) {
+        let mut fat = FileAllocationTable {};
+
+
     }
 }
 
@@ -51,4 +106,5 @@ pub fn read_file(path: &str, destination: uint) {
 
     let active_partition = active_partition(partition_table);
 
+    active_partition.read_file(path, destination);
 }

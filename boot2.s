@@ -1,7 +1,6 @@
 extern stage2_main
 
 section .text
-    ; Clear the screen
     call    stage2_main
 
     ; Just in case kernel_main returns

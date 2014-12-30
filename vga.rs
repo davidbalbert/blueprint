@@ -1,4 +1,4 @@
-use tinyrt::prelude::*;
+use core::prelude::*;
 
 const VIDEO_MEMORY: int = 0xB8000;
 
@@ -13,10 +13,12 @@ pub fn clear_screen() {
 pub fn print(message: &str) {
     let mut i = 0i;
 
-    for b in message.as_bytes().iter() {
+    for b in message.bytes() {
         unsafe {
-            *((VIDEO_MEMORY + i) as *mut u8) = *b
+            *((VIDEO_MEMORY + i) as *mut u8) = b
         }
+
+        i += 2;
     }
 }
 
